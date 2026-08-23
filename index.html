@@ -275,9 +275,55 @@
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
   }
+
+  /* ---------- login gate ---------- */
+  #loginGate{
+    position:fixed; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 15% 10%, var(--pink-soft) 0%, transparent 45%),
+      radial-gradient(circle at 85% 15%, var(--lavender-soft) 0%, transparent 45%),
+      radial-gradient(circle at 50% 90%, var(--mint-soft) 0%, transparent 50%),
+      #FFFCF8;
+    padding:20px;
+  }
+  .login-card{
+    width:100%; max-width:380px; background:var(--card); backdrop-filter:blur(14px);
+    border-radius:28px; padding:34px 30px; box-shadow:var(--shadow-lg);
+    border:1px solid rgba(255,255,255,0.6); text-align:center;
+  }
+  .login-card .emoji-big{font-size:40px; display:block; margin-bottom:10px;}
+  .login-card h2{
+    font-family:'Baloo 2', sans-serif; font-size:24px; margin:0 0 6px; color:var(--ink);
+  }
+  .login-card p{font-size:13.5px; color:var(--ink-soft); font-weight:600; margin:0 0 22px;}
+  .login-card input{
+    width:100%; padding:13px 16px; border-radius:16px; border:2px solid #EDE9FA;
+    background:#FAF8FF; color:var(--ink); font-family:'Nunito',sans-serif; font-weight:600; font-size:14.5px;
+    outline:none; transition:border-color 0.15s ease; margin-bottom:12px;
+  }
+  .login-card input:focus{border-color:var(--lavender);}
+  .login-card .find-btn{width:100%; margin-top:6px; text-align:center; display:block;}
+  .login-error{
+    color:var(--pink); font-weight:800; font-size:12.5px; margin-top:12px; min-height:16px;
+  }
+  #appRoot{display:none;}
 </style>
 </head>
 <body>
+<div id="loginGate">
+  <div class="login-card">
+    <span class="emoji-big">🔒</span>
+    <h2>Dalphine's Recipe Book</h2>
+    <p>This kitchen's members-only. Sign in to start cooking.</p>
+    <input type="text" id="loginUser" placeholder="Username" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+    <button class="find-btn" id="loginBtn">Enter →</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div id="appRoot">
 <div class="blob blob1"></div>
 <div class="blob blob2"></div>
 <div class="blob blob3"></div>
@@ -285,7 +331,7 @@
 <header>
   <div class="badge"><span class="sparkle">✨</span> AI-powered, updated live</div>
   <h1 class="brand">Dalphine's Recipe Book</h1>
-  <p class="tagline">Tell it what's in your fridge and cupboard — <b>Claude dreams up recipes</b> from exactly what you've got, ranked by how few things you're missing.</p>
+  <p class="tagline">Tell it what's in your fridge and cupboard — <b>Gemini dreams up recipes</b> from exactly what you've got, ranked by how few things you're missing.</p>
 </header>
 
 <div class="panel">
@@ -305,13 +351,6 @@
   </div>
 </div>
 
-<div class="api-key-row show" id="apiKeyRow">
-  <div class="row">
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-... (your Anthropic API key)">
-  </div>
-  <p>AI mode calls the Anthropic API directly from your browser with this key — it's kept only in this page's memory, never stored or sent anywhere but api.anthropic.com. For a public site, route this through your own backend instead so visitors never see a key field. No key handy? Switch to Built-in mode — no setup needed.</p>
-</div>
-
 <div class="results-wrap">
   <div class="results-head">
     <h2 id="resultsTitle">Add a few ingredients to start</h2>
@@ -329,6 +368,7 @@
 <footer>
   made with pastel gradients and a hungry imagination 🌈
 </footer>
+</div><!-- /#appRoot -->
 
 <script>
 /* =========================================================
@@ -399,6 +439,48 @@ const RECIPES = [
 ];
 
 /* =========================================================
+   CONFIG — edit these before you deploy
+   ========================================================= */
+// Paste your own Gemini API key here (get one free at aistudio.google.com/apikey).
+// Reminder: anyone who views this page's source can read this key. Restrict it
+// in Google AI Studio (HTTP referrer + daily quota) rather than relying on the
+// login screen below to keep it safe — the login is a light gate, not real security.
+const GEMINI_API_KEY = "AQ.Ab8RN6L5pycfTfD3OHJzA59Y-r-sWLwAWHOoJH8WmkyxZIiqqg";
+const GEMINI_MODEL = "gemini-3.6-flash";
+
+// Login gate credentials
+const SITE_USERNAME = "Starr";
+const SITE_PASSWORD = "Dalphines.starrr.girl";
+
+/* =========================================================
+   LOGIN GATE
+   ========================================================= */
+const loginGate = document.getElementById('loginGate');
+const appRoot = document.getElementById('appRoot');
+const loginUser = document.getElementById('loginUser');
+const loginPass = document.getElementById('loginPass');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+
+function attemptLogin(){
+  const u = loginUser.value.trim();
+  const p = loginPass.value;
+  if(u === SITE_USERNAME && p === SITE_PASSWORD){
+    loginGate.style.display = 'none';
+    appRoot.style.display = 'block';
+  } else {
+    loginError.textContent = "That username or password isn't right — try again.";
+    loginPass.value = '';
+    loginPass.focus();
+  }
+}
+loginBtn.addEventListener('click', attemptLogin);
+[loginUser, loginPass].forEach(el=>{
+  el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') attemptLogin(); });
+});
+loginUser.focus();
+
+/* =========================================================
    STATE
    ========================================================= */
 let ingredients = [];
@@ -413,8 +495,6 @@ const resultsCount = document.getElementById('resultsCount');
 const findBtn = document.getElementById('findBtn');
 const modeBuiltinBtn = document.getElementById('modeBuiltin');
 const modeAIBtn = document.getElementById('modeAI');
-const apiKeyRow = document.getElementById('apiKeyRow');
-const apiKeyInput = document.getElementById('apiKeyInput');
 
 const QUICK_SUGGESTIONS = ["eggs","rice","garlic","onion","chicken","pasta","tomato","cheese","potato","butter","soy sauce","bread"];
 const CHIP_COLORS = ['c0','c1','c2','c3'];
@@ -481,13 +561,11 @@ modeBuiltinBtn.onclick = ()=>{
   mode = 'builtin';
   modeBuiltinBtn.classList.add('active');
   modeAIBtn.classList.remove('active');
-  apiKeyRow.classList.remove('show');
 };
 modeAIBtn.onclick = ()=>{
   mode = 'ai';
   modeAIBtn.classList.add('active');
   modeBuiltinBtn.classList.remove('active');
-  apiKeyRow.classList.add('show');
 };
 
 findBtn.onclick = ()=>{
@@ -583,39 +661,38 @@ function renderBuiltinResults(scored){
 }
 
 /* =========================================================
-   AI MODE (default — calls Anthropic API directly with a user-supplied key)
+   AI MODE (default — calls the Gemini API with the shared key above)
    ========================================================= */
 async function runAISearch(){
-  const key = apiKeyInput.value.trim();
-  if(!key){
-    apiKeyInput.focus();
-    apiKeyInput.placeholder = "paste your API key here first…";
+  if(!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_GEMINI_API_KEY_HERE"){
+    resultsTitle.textContent = "No Gemini key set yet";
+    resultsCount.textContent = "";
+    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">🔑</span><span class="big">Add your Gemini API key</span>Open the file and paste your key into GEMINI_API_KEY near the top of the script — get a free one at aistudio.google.com/apikey. Or switch to Built-in mode above, no key needed.</div>`;
     return;
   }
 
-  resultsTitle.textContent = "Asking Claude what to cook…";
+  resultsTitle.textContent = "Asking Gemini what to cook…";
   resultsCount.textContent = "";
   resultsArea.innerHTML = `<div class="loading-state"><span class="pulse"><span class="spinner"></span>thinking up recipes for: ${escapeHtml(ingredients.join(', '))}</span></div>`;
 
   const prompt = `I have these ingredients available: ${ingredients.join(', ')}.
 Suggest up to 6 recipes I could realistically make, prioritizing ones that use mostly what I already have.
-Respond ONLY with valid JSON (no markdown fences, no preamble), as an array of objects with this exact shape:
+Respond ONLY with valid JSON (no markdown fences, no preamble, no surrounding text), as an array of objects with this exact shape:
 [{"name": "...", "time": "20 min", "diff": "Easy", "tags": ["dinner"], "ingredients": ["...", "..."], "missing": ["..."], "steps": ["...", "..."]}]
 "ingredients" is the full ingredient list for the recipe. "missing" is the subset of those I likely don't have on hand, based on my list above. Keep steps concise, 3-5 steps.`;
 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
   try{
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
+        "x-goog-api-key": GEMINI_API_KEY
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 2000,
-        messages: [{ role: "user", content: prompt }]
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
       })
     });
 
@@ -625,7 +702,9 @@ Respond ONLY with valid JSON (no markdown fences, no preamble), as an array of o
     }
 
     const data = await response.json();
-    const textBlock = data.content.map(b=>b.text || "").join("\n");
+    const textBlock = (data.candidates && data.candidates[0] && data.candidates[0].content
+      ? data.candidates[0].content.parts.map(p=>p.text || "").join("\n")
+      : "");
     const cleaned = textBlock.replace(/```json|```/g, "").trim();
     const recipes = JSON.parse(cleaned);
     renderAIResults(recipes);
@@ -633,7 +712,7 @@ Respond ONLY with valid JSON (no markdown fences, no preamble), as an array of o
   }catch(err){
     resultsTitle.textContent = "Couldn't reach the AI";
     resultsCount.textContent = "";
-    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">😕</span><span class="big">Something went wrong</span>${escapeHtml(err.message)}<br><br>Double check your API key, or switch to Built-in mode above.</div>`;
+    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">😕</span><span class="big">Something went wrong</span>${escapeHtml(err.message)}<br><br>Double check the Gemini key in the code, or switch to Built-in mode above.</div>`;
   }
 }
 
@@ -679,7 +758,7 @@ function renderAIResults(recipes){
         <summary>Steps</summary>
         <ol class="steps">${stepsList}</ol>
       </details>
-      <div class="ai-note">✨ generated live by claude</div>
+      <div class="ai-note">✨ generated live by gemini</div>
     `;
     grid.appendChild(card);
   });
