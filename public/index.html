@@ -583,37 +583,150 @@ findBtn.onclick = ()=>{
 /* =========================================================
    BUILT-IN MATCHING (fallback, no API key needed)
    ========================================================= */
-function tokenMatch(userIng, recipeIng){
-  return recipeIng.includes(userIng) || userIng.includes(recipeIng);
-}
+async function runAISearch() {
 
-function scoreRecipe(recipe){
-  let matched = [];
-  let missing = [];
-  recipe.ingredients.forEach(ri=>{
-    const hit = ingredients.some(ui=>tokenMatch(ui, ri));
-    if(hit) matched.push(ri); else missing.push(ri);
-  });
-  return {
-    recipe, matched, missing,
-    pct: Math.round((matched.length / recipe.ingredients.length) * 100)
-  };
-}
-
-function runBuiltinSearch(){
-  resultsTitle.textContent = "Matching against your pantry…";
+  resultsTitle.textContent = "Asking Gemini what to cook…";
   resultsCount.textContent = "";
-  resultsArea.innerHTML = `<div class="loading-state"><span class="pulse"><span class="spinner"></span>sorting the recipe box…</span></div>`;
 
-  setTimeout(()=>{
-    const scored = RECIPES.map(scoreRecipe)
-      .filter(s=>s.matched.length > 0)
-      .sort((a,b)=> b.pct - a.pct || a.missing.length - b.missing.length);
+  resultsArea.innerHTML = `
+    <div class="loading-state">
+      <span class="pulse">
+        <span class="spinner"></span>
+        thinking up recipes for: ${escapeHtml(ingredients.join(", "))}
+      </span>
+    </div>
+  `;
 
-    renderBuiltinResults(scored);
-  }, 260);
+  const prompt = `I have these ingredients available: ${ingredients.join(", ")}.
+Suggest up to 6 recipes I could realistically make, prioritizing ones that use mostly what I already have.
+
+Respond ONLY with valid JSON, with this exact shape:
+
+[
+  {
+    "name": "...",
+    "time": "20 min",
+    "diff": "Easy",
+    "tags": ["dinner"],
+    "ingredients": ["...", "..."],
+    "missing": ["..."],
+    "steps": ["...", "..."]
+  }
+]
+
+"ingredients" is the full ingredient list.
+"missing" contains ingredients I likely don't have.
+Keep steps concise, 3-5 steps.`;
+
+  try {
+
+    const response = await fetch(
+      "https://pantry.brandonnjenga294.workers.dev/api/gemini",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+
+      throw new Error(
+        "API error " + response.status + ": " + errorText
+      );
+    }
+
+    const data = await response.json();
+
+    const textBlock =
+      data.candidates &&
+      data.candidates[0] &&
+      data.candidates[0].content &&
+      data.candidates[0].content.parts
+        ? data.candidates[0].content.parts
+            .map(part => part.text || "")
+            .join("")
+        : "";
+
+    if (!textBlock) {
+      throw new Error("Gemini returned an empty response.");
+    }
+
+    console.log("Gemini raw response:", textBlock);
+
+    const cleaned = textBlock
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
+
+    let recipes;
+
+    try {
+
+      recipes = JSON.parse(cleaned);
+
+    } catch (jsonError) {
+
+      console.error(
+        "Gemini returned invalid JSON:",
+        cleaned
+      );
+
+      console.error(
+        "JSON parse error:",
+        jsonError
+      );
+
+      throw new Error(
+        "Gemini returned invalid recipe data."
+      );
+    }
+
+    if (!Array.isArray(recipes)) {
+      throw new Error(
+        "Gemini did not return a recipe list."
+      );
+    }
+
+    renderAIResults(recipes);
+
+  } catch (err) {
+
+    console.error(
+      "AI request failed:",
+      err
+    );
+
+    resultsTitle.textContent = "Couldn't reach the AI";
+    resultsCount.textContent = "";
+
+    resultsArea.innerHTML = `
+      <div class="empty-state">
+        <span class="emoji-big">😕</span>
+        <span class="big">Something went wrong</span>
+        ${escapeHtml(err.message)}
+        <br><br>
+        Try again or switch to Built-in mode.
+      </div>
+    `;
+  }
 }
-
 function renderBuiltinResults(scored){
   if(scored.length === 0){
     resultsTitle.textContent = "No matches yet";
