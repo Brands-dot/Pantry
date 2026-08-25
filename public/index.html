@@ -1,1 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dalphine's Recipe Book — cook what you've got</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink: #FF8FA8;
+    --pink-soft: #FFD9E3;
+    --lavender: #B7A6FF;
+    --lavender-soft: #E8E1FF;
+    --mint: #6FE0C4;
+    --mint-soft: #D8F9EF;
+    --sun: #FFC857;
+    --sun-soft: #FFF1D2;
+    --ink: #33314A;
+    --ink-soft: #6B6885;
+    --white: #FFFFFF;
+    --card: #FFFFFFcc;
+    --shadow: 0 10px 30px rgba(90, 70, 140, 0.12);
+    --shadow-lg: 0 20px 50px rgba(90, 70, 140, 0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(circle at 15% 10%, var(--pink-soft) 0%, transparent 45%),
+      radial-gradient(circle at 85% 15%, var(--lavender-soft) 0%, transparent 45%),
+      radial-gradient(circle at 50% 90%, var(--mint-soft) 0%, transparent 50%),
+      #FFFCF8;
+    overflow-x:hidden;
+    position:relative;
+  }
+  ::selection{background:var(--pink); color:white;}
+  .display{font-family:'Baloo 2', sans-serif;}
 
+  /* floating blobs */
+  .blob{
+    position:fixed; border-radius:50%; filter:blur(50px); opacity:0.5; z-index:0; pointer-events:none;
+    animation:float 14s ease-in-out infinite;
+  }
+  .blob1{width:340px; height:340px; background:var(--pink-soft); top:-100px; left:-80px; animation-delay:0s;}
+  .blob2{width:280px; height:280px; background:var(--lavender-soft); top:20%; right:-100px; animation-delay:3s;}
+  .blob3{width:300px; height:300px; background:var(--mint-soft); bottom:-120px; left:30%; animation-delay:6s;}
+  @keyframes float{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(20px,-24px) scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce){ .blob{animation:none;} }
+
+  header{
+    padding:72px 24px 20px; text-align:center; position:relative; z-index:1;
+  }
+  .badge{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--white); padding:8px 16px; border-radius:999px;
+    box-shadow:var(--shadow); font-size:13px; font-weight:700; color:var(--pink);
+    margin-bottom:22px;
+  }
+  .badge .sparkle{font-size:14px;}
+  h1.brand{
+    font-family:'Baloo 2', sans-serif; font-weight:800;
+    font-size:clamp(34px, 6.5vw, 60px); line-height:1.1; margin:0;
+    background:linear-gradient(100deg, var(--pink), var(--lavender) 55%, var(--mint));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tagline{
+    max-width:520px; margin:18px auto 0; font-size:17px; color:var(--ink-soft);
+    line-height:1.65; font-weight:600;
+  }
+  .tagline b{color:var(--ink);}
+
+  /* input card */
+  .panel{
+    max-width:720px; margin:36px auto 0; padding:0 20px; position:relative; z-index:2;
+  }
+  .panel-inner{
+    background:var(--card); backdrop-filter:blur(14px);
+    border-radius:28px; padding:28px 26px 24px;
+    box-shadow:var(--shadow-lg); border:1px solid rgba(255,255,255,0.6);
+  }
+  .panel-label{
+    display:flex; align-items:center; gap:8px; margin-bottom:14px;
+    font-weight:800; font-size:14px; color:var(--ink);
+  }
+  .panel-label .emoji{font-size:16px;}
+
+  .chip-field{
+    display:flex; flex-wrap:wrap; gap:9px; align-items:center;
+    background:#FAF8FF; border-radius:18px; padding:14px 16px; margin-bottom:16px; min-height:26px;
+    border:2px solid transparent; transition:border-color 0.15s ease;
+  }
+  .chip-field:focus-within{border-color:var(--lavender);}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'Nunito', sans-serif; font-weight:700; font-size:13.5px;
+    padding:7px 8px 7px 14px; border-radius:999px; color:var(--ink);
+    animation:chipIn 0.22s ease-out;
+  }
+  .chip.c0{background:var(--pink-soft);}
+  .chip.c1{background:var(--lavender-soft);}
+  .chip.c2{background:var(--mint-soft);}
+  .chip.c3{background:var(--sun-soft);}
+  @keyframes chipIn{ from{opacity:0; transform:scale(0.85);} to{opacity:1; transform:scale(1);} }
+  .chip button{
+    all:unset; cursor:pointer; color:var(--ink-soft); font-size:16px; line-height:1;
+    padding:3px 5px; border-radius:50%; font-weight:700;
+  }
+  .chip button:hover{background:rgba(0,0,0,0.08); color:var(--ink);}
+  #ingredientInput{
+    flex:1; min-width:160px; border:none; outline:none; background:transparent;
+    font-family:'Nunito', sans-serif; font-weight:600; font-size:15.5px; color:var(--ink); padding:6px 2px;
+  }
+  #ingredientInput::placeholder{color:#B3AFC9;}
+
+  .quick-add{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px;}
+  .quick-add button{
+    all:unset; cursor:pointer; font-weight:700; font-size:12.5px;
+    padding:7px 13px; background:var(--white); border-radius:999px;
+    color:var(--ink-soft); box-shadow:0 2px 8px rgba(90,70,140,0.08);
+    transition:all 0.15s ease;
+  }
+  .quick-add button:hover{background:var(--lavender); color:white; transform:translateY(-1px);}
+
+  .panel-footer{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;}
+
+  .mode-toggle{
+    display:flex; background:#F1EEFB; border-radius:999px; padding:4px; gap:2px;
+  }
+  .mode-toggle button{
+    all:unset; cursor:pointer; font-weight:800; font-size:13px;
+    padding:9px 16px; border-radius:999px; color:var(--ink-soft);
+    transition:all 0.18s ease; display:flex; align-items:center; gap:6px;
+  }
+  .mode-toggle button.active{background:var(--white); color:var(--ink); box-shadow:0 3px 10px rgba(90,70,140,0.15);}
+  .mode-toggle button .dot{width:6px; height:6px; border-radius:50%; background:var(--mint); display:inline-block;}
+
+  .find-btn{
+    all:unset; cursor:pointer;
+    background:linear-gradient(100deg, var(--pink), var(--lavender));
+    color:white; font-family:'Baloo 2', sans-serif; font-weight:700;
+    font-size:16px; padding:14px 28px; border-radius:999px;
+    box-shadow:0 10px 24px rgba(255,143,168,0.4);
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .find-btn:hover{transform:translateY(-2px); box-shadow:0 14px 30px rgba(183,166,255,0.45);}
+  .find-btn:active{transform:translateY(0);}
+  .find-btn:disabled{opacity:0.6; cursor:not-allowed; transform:none;}
+
+  .api-key-row{
+    max-width:720px; margin:16px auto 0; padding:0 20px;
+    display:none; flex-wrap:wrap; gap:10px;
+  }
+  .api-key-row.show{display:flex;}
+  .api-key-row .row{display:flex; gap:10px; width:100%; flex-wrap:wrap;}
+  .api-key-row input{
+    flex:1; min-width:220px; padding:13px 18px; border-radius:16px; border:2px solid #EDE9FA;
+    background:var(--white); color:var(--ink); font-family:'Nunito',sans-serif; font-weight:600; font-size:14px;
+    outline:none; transition:border-color 0.15s ease;
+  }
+  .api-key-row input:focus{border-color:var(--lavender);}
+  .api-key-row input::placeholder{color:#B3AFC9;}
+  .api-key-row p{
+    width:100%; font-size:12.5px; color:var(--ink-soft); font-weight:600; margin:4px 4px 0;
+    line-height:1.6;
+  }
+
+  /* results */
+  .results-wrap{max-width:1120px; margin:0 auto; padding:56px 20px 100px; position:relative; z-index:1;}
+  .results-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:26px; flex-wrap:wrap; gap:8px;}
+  .results-head h2{
+    font-family:'Baloo 2', sans-serif; font-size:26px; margin:0; color:var(--ink); font-weight:700;
+  }
+  .results-count{font-weight:700; font-size:13px; color:var(--pink); background:var(--pink-soft); padding:5px 12px; border-radius:999px;}
+
+  .empty-state{
+    text-align:center; padding:70px 20px; color:var(--ink-soft); font-weight:600; font-size:15px; line-height:1.9;
+  }
+  .empty-state .big{font-family:'Baloo 2', sans-serif; font-size:24px; color:var(--ink); display:block; margin-bottom:10px; font-weight:700;}
+  .empty-state .emoji-big{font-size:44px; display:block; margin-bottom:14px;}
+
+  .loading-state{text-align:center; padding:70px 20px; font-weight:700; font-size:15px; color:var(--lavender);}
+  .loading-state .pulse{display:inline-flex; align-items:center; gap:10px;}
+  .spinner{
+    width:18px; height:18px; border-radius:50%;
+    border:3px solid var(--lavender-soft); border-top-color:var(--lavender);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{transform:rotate(360deg);} }
+
+  .card-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:22px;
+  }
+  .rcard{
+    background:var(--white); border-radius:26px; position:relative; padding:26px 24px 24px;
+    box-shadow:var(--shadow);
+    transition:transform 0.2s ease, box-shadow 0.2s ease;
+    animation:cardIn 0.4s ease-out backwards;
+    border:1px solid #F3F0FC;
+  }
+  .rcard:hover{transform:translateY(-6px); box-shadow:var(--shadow-lg);}
+  @keyframes cardIn{ from{opacity:0; transform:translateY(14px) scale(0.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+
+  .stamp{
+    position:absolute; top:-16px; right:18px;
+    min-width:54px; height:54px; padding:0 6px; border-radius:16px;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    font-weight:800; box-shadow:0 8px 18px rgba(90,70,140,0.25);
+    background:linear-gradient(135deg, var(--sun), #FFB84D); color:var(--ink);
+  }
+  .stamp.full{background:linear-gradient(135deg, var(--mint), #4FCBA8); color:white;}
+  .stamp small{font-size:8.5px; letter-spacing:0.03em; text-transform:uppercase; opacity:0.75; font-weight:700;}
+  .stamp b{font-size:16px; line-height:1.1; font-family:'Baloo 2', sans-serif;}
+
+  .rcard h3{
+    font-family:'Baloo 2', sans-serif; font-size:20px; line-height:1.15; font-weight:700;
+    margin:4px 0 10px; padding-right:44px; color:var(--ink);
+  }
+  .rcard .meta{
+    display:flex; gap:7px; flex-wrap:wrap; font-size:11.5px; font-weight:700;
+    color:var(--ink-soft); margin-bottom:16px;
+  }
+  .rcard .meta span{background:#F5F3FB; padding:4px 10px; border-radius:999px;}
+
+  .ing-list{list-style:none; margin:0 0 16px; padding:0; font-size:13.5px; font-weight:600; line-height:2;}
+  .ing-list li{display:flex; align-items:center; gap:9px;}
+  .ing-list li.have::before{
+    content:"✓"; color:white; background:var(--mint); width:18px; height:18px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0;
+  }
+  .ing-list li.missing::before{
+    content:""; width:18px; height:18px; border-radius:50%; border:2px solid #E5E1F5; flex-shrink:0;
+  }
+  .ing-list li.missing{color:var(--ink-soft);}
+
+  .divider{border:none; border-top:1px solid #F0EDFA; margin:14px 0;}
+
+  details summary{
+    cursor:pointer; font-weight:800; font-size:13px; color:var(--lavender);
+    list-style:none; user-select:none; display:flex; align-items:center; gap:6px;
+  }
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{
+    content:"+"; width:20px; height:20px; border-radius:50%; background:var(--lavender-soft);
+    display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;
+  }
+  details[open] summary::before{content:"–";}
+  details[open] summary{margin-bottom:12px;}
+  .steps{margin:0; padding-left:20px; font-size:13.5px; font-weight:500; line-height:1.8; color:var(--ink);}
+  .steps li{margin-bottom:7px;}
+
+  .ai-note{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; font-weight:800; color:var(--pink);
+    margin-top:16px; padding-top:12px; border-top:1px dashed #F0EDFA;
+  }
+
+  footer{
+    text-align:center; padding:30px 20px 50px; font-size:12.5px; font-weight:600;
+    color:var(--ink-soft); position:relative; z-index:1;
+  }
+
+  @media (max-width:520px){
+    .panel-footer{flex-direction:column; align-items:stretch;}
+    .find-btn{width:100%; text-align:center;}
+    .mode-toggle{justify-content:center;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ---------- login gate ---------- */
+  #loginGate{
+    position:fixed; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 15% 10%, var(--pink-soft) 0%, transparent 45%),
+      radial-gradient(circle at 85% 15%, var(--lavender-soft) 0%, transparent 45%),
+      radial-gradient(circle at 50% 90%, var(--mint-soft) 0%, transparent 50%),
+      #FFFCF8;
+    padding:20px;
+  }
+  .login-card{
+    width:100%; max-width:380px; background:var(--card); backdrop-filter:blur(14px);
+    border-radius:28px; padding:34px 30px; box-shadow:var(--shadow-lg);
+    border:1px solid rgba(255,255,255,0.6); text-align:center;
+  }
+  .login-card .emoji-big{font-size:40px; display:block; margin-bottom:10px;}
+  .login-card h2{
+    font-family:'Baloo 2', sans-serif; font-size:24px; margin:0 0 6px; color:var(--ink);
+  }
+  .login-card p{font-size:13.5px; color:var(--ink-soft); font-weight:600; margin:0 0 22px;}
+  .login-card input{
+    width:100%; padding:13px 16px; border-radius:16px; border:2px solid #EDE9FA;
+    background:#FAF8FF; color:var(--ink); font-family:'Nunito',sans-serif; font-weight:600; font-size:14.5px;
+    outline:none; transition:border-color 0.15s ease; margin-bottom:12px;
+  }
+  .login-card input:focus{border-color:var(--lavender);}
+  .login-card .find-btn{width:100%; margin-top:6px; text-align:center; display:block;}
+  .login-error{
+    color:var(--pink); font-weight:800; font-size:12.5px; margin-top:12px; min-height:16px;
+  }
+  #appRoot{display:none;}
+</style>
+</head>
+<body>
+<div id="loginGate">
+  <div class="login-card">
+    <span class="emoji-big">🔒</span>
+    <h2>Dalphine's Recipe Book</h2>
+    <p>This kitchen's members-only. Sign in to start cooking.</p>
+    <input type="text" id="loginUser" placeholder="Username" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+    <button class="find-btn" id="loginBtn">Enter →</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div id="appRoot">
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<header>
+  <div class="badge"><span class="sparkle">✨</span> AI-powered, updated live</div>
+  <h1 class="brand">Dalphine's Recipe Book</h1>
+  <p class="tagline">Tell it what's in your fridge and cupboard — <b>Gemini dreams up recipes</b> from exactly what you've got, ranked by how few things you're missing.</p>
+</header>
+
+<div class="panel">
+  <div class="panel-inner">
+    <div class="panel-label"><span class="emoji">🥕</span> What's in the kitchen?</div>
+    <div class="chip-field" id="chipField">
+      <input type="text" id="ingredientInput" placeholder="type an ingredient, hit enter…" autocomplete="off">
+    </div>
+    <div class="quick-add" id="quickAdd"></div>
+    <div class="panel-footer">
+      <div class="mode-toggle">
+        <button id="modeAI" class="active"><span class="dot"></span>AI mode</button>
+        <button id="modeBuiltin">Built-in</button>
+      </div>
+      <button class="find-btn" id="findBtn">Find recipes →</button>
+    </div>
+  </div>
+</div>
+
+<div class="results-wrap">
+  <div class="results-head">
+    <h2 id="resultsTitle">Add a few ingredients to start</h2>
+    <span class="results-count" id="resultsCount"></span>
+  </div>
+  <div id="resultsArea">
+    <div class="empty-state">
+      <span class="emoji-big">🍳</span>
+      <span class="big">Your recipe box is listening</span>
+      Add 3–4 ingredients above — even odd combos like <em>eggs, rice, soy sauce</em> — and hit "Find recipes."
+    </div>
+  </div>
+</div>
+
+<footer>
+  made with pastel gradients and a hungry imagination 🌈
+</footer>
+</div><!-- /#appRoot -->
+
+<script>
+/* =========================================================
+   RECIPE DATABASE (used by Built-in mode)
+   ========================================================= */
+const RECIPES = [
+  {name:"Garlic Butter Fried Rice", time:"15 min", diff:"Easy", tags:["dinner","quick"], ingredients:["rice","garlic","butter","egg","soy sauce","green onion"], steps:["Heat butter in a wok, sauté minced garlic until fragrant.","Push garlic aside, scramble the egg in the same pan.","Add cold cooked rice, breaking up clumps.","Stir in soy sauce and sliced green onion, fry 3-4 min until rice is toasty."]},
+  {name:"Tomato Basil Pasta", time:"20 min", diff:"Easy", tags:["dinner","vegetarian"], ingredients:["pasta","tomato","garlic","olive oil","basil","parmesan"], steps:["Boil pasta until al dente, reserve a cup of pasta water.","Sauté garlic in olive oil, add chopped tomatoes, cook down 8 min.","Toss in pasta with a splash of pasta water.","Finish with torn basil and grated parmesan."]},
+  {name:"Classic Scrambled Eggs on Toast", time:"8 min", diff:"Easy", tags:["breakfast","quick"], ingredients:["egg","butter","bread","salt","pepper"], steps:["Whisk eggs with a pinch of salt.","Melt butter in a pan on low heat, add eggs.","Stir gently and slowly until just set.","Serve over toasted bread with black pepper."]},
+  {name:"Chicken Fried Rice", time:"20 min", diff:"Easy", tags:["dinner","quick"], ingredients:["rice","chicken","egg","soy sauce","garlic","onion","carrot"], steps:["Cook diced chicken with garlic and onion until browned.","Push aside, scramble egg into the pan.","Add rice, carrot, and soy sauce.","Stir-fry everything together 4-5 minutes."]},
+  {name:"Simple Vegetable Soup", time:"35 min", diff:"Easy", tags:["dinner","vegetarian","soup"], ingredients:["onion","carrot","celery","potato","vegetable broth","garlic"], steps:["Sauté onion, carrot, and celery until soft.","Add garlic, potato, and broth.","Simmer 20-25 minutes until potatoes are tender.","Season with salt and pepper to taste."]},
+  {name:"Grilled Cheese Sandwich", time:"10 min", diff:"Easy", tags:["lunch","quick","vegetarian"], ingredients:["bread","cheese","butter"], steps:["Butter one side of each bread slice.","Layer cheese between the unbuttered sides.","Grill in a pan over medium heat 3 min per side until golden and melty."]},
+  {name:"Shakshuka", time:"25 min", diff:"Medium", tags:["breakfast","vegetarian"], ingredients:["egg","tomato","onion","garlic","bell pepper","cumin","olive oil"], steps:["Sauté onion and bell pepper in olive oil until soft.","Add garlic and cumin, cook 1 min.","Stir in chopped tomatoes, simmer 10 min into a thick sauce.","Crack eggs into the sauce, cover and cook until whites set, 6-8 min."]},
+  {name:"Peanut Noodles", time:"15 min", diff:"Easy", tags:["dinner","quick","vegetarian"], ingredients:["noodles","peanut butter","soy sauce","garlic","lime","green onion"], steps:["Cook noodles, drain, reserve 1/4 cup cooking water.","Whisk peanut butter, soy sauce, minced garlic, lime juice, and pasta water into a sauce.","Toss noodles in the sauce.","Top with sliced green onion."]},
+  {name:"Baked Potato Bar", time:"50 min", diff:"Easy", tags:["dinner","vegetarian"], ingredients:["potato","butter","cheese","sour cream","green onion"], steps:["Prick potatoes and bake at 425°F for 45 min until fork-tender.","Slice open and fluff the inside with a fork.","Top with butter, cheese, sour cream, and green onion."]},
+  {name:"Chickpea Curry", time:"30 min", diff:"Medium", tags:["dinner","vegetarian"], ingredients:["chickpeas","onion","garlic","tomato","coconut milk","curry powder","rice"], steps:["Sauté onion and garlic until soft.","Stir in curry powder, cook 1 min until fragrant.","Add tomato and coconut milk, simmer 10 min.","Add chickpeas, simmer 10 more minutes. Serve over rice."]},
+  {name:"Caprese Salad", time:"10 min", diff:"Easy", tags:["lunch","vegetarian","quick"], ingredients:["tomato","mozzarella","basil","olive oil","balsamic vinegar"], steps:["Slice tomato and mozzarella into rounds.","Layer alternating with basil leaves.","Drizzle with olive oil and balsamic vinegar."]},
+  {name:"Beef Tacos", time:"25 min", diff:"Easy", tags:["dinner","quick"], ingredients:["ground beef","onion","tortilla","cheese","lettuce","tomato","taco seasoning"], steps:["Brown beef with diced onion.","Add taco seasoning and a splash of water, simmer 5 min.","Warm tortillas.","Assemble with beef, cheese, lettuce, and tomato."]},
+  {name:"Mushroom Risotto", time:"40 min", diff:"Medium", tags:["dinner","vegetarian"], ingredients:["rice","mushroom","onion","garlic","vegetable broth","parmesan","butter"], steps:["Sauté mushrooms until browned, set aside.","Sauté onion and garlic, add rice, toast 1 min.","Add warm broth one ladle at a time, stirring until absorbed, ~20 min.","Fold in mushrooms, butter, and parmesan."]},
+  {name:"Lentil Soup", time:"35 min", diff:"Easy", tags:["dinner","vegetarian","soup"], ingredients:["lentils","onion","carrot","celery","garlic","vegetable broth","cumin"], steps:["Sauté onion, carrot, celery, and garlic.","Add cumin, lentils, and broth.","Simmer 25 min until lentils are soft.","Blend partially for a creamier texture if desired."]},
+  {name:"Banana Pancakes", time:"20 min", diff:"Easy", tags:["breakfast","vegetarian"], ingredients:["banana","flour","egg","milk","butter","baking powder"], steps:["Mash banana, whisk in egg and milk.","Fold in flour and baking powder until just combined.","Cook 1/4 cup portions in a buttered pan until bubbly, flip.","Serve warm."]},
+  {name:"Egg Fried Rice", time:"12 min", diff:"Easy", tags:["dinner","quick","vegetarian"], ingredients:["rice","egg","soy sauce","garlic","green onion"], steps:["Scramble eggs, remove from pan.","Sauté garlic, add cold rice, breaking clumps.","Stir in soy sauce and egg.","Top with green onion."]},
+  {name:"Chicken Noodle Soup", time:"40 min", diff:"Easy", tags:["dinner","soup"], ingredients:["chicken","noodles","carrot","celery","onion","chicken broth","garlic"], steps:["Sauté onion, carrot, celery, and garlic.","Add broth and chicken, simmer 20 min until chicken is cooked.","Shred chicken, return to pot.","Add noodles, cook until tender, 8-10 min."]},
+  {name:"Avocado Toast", time:"7 min", diff:"Easy", tags:["breakfast","quick","vegetarian"], ingredients:["bread","avocado","lemon","salt","pepper"], steps:["Toast bread.","Mash avocado with lemon juice, salt, and pepper.","Spread over toast."]},
+  {name:"Stir-Fried Vegetables with Tofu", time:"20 min", diff:"Easy", tags:["dinner","vegetarian","quick"], ingredients:["tofu","bell pepper","broccoli","garlic","soy sauce","ginger","rice"], steps:["Pan-fry cubed tofu until golden, set aside.","Stir-fry garlic and ginger, add broccoli and bell pepper.","Return tofu to the pan, add soy sauce.","Serve over rice."]},
+  {name:"Classic Omelette", time:"10 min", diff:"Easy", tags:["breakfast","quick","vegetarian"], ingredients:["egg","cheese","butter","salt"], steps:["Whisk eggs with a pinch of salt.","Melt butter in a nonstick pan.","Pour in eggs, let set at the edges.","Add cheese, fold in half once mostly set."]},
+  {name:"Spaghetti Aglio e Olio", time:"15 min", diff:"Easy", tags:["dinner","vegetarian","quick"], ingredients:["pasta","garlic","olive oil","red pepper flakes","parsley"], steps:["Boil pasta, reserve pasta water.","Gently sizzle sliced garlic and pepper flakes in olive oil until golden, not browned.","Toss pasta into the oil with a splash of pasta water.","Finish with chopped parsley."]},
+  {name:"Black Bean Quesadillas", time:"15 min", diff:"Easy", tags:["lunch","vegetarian","quick"], ingredients:["tortilla","black beans","cheese","onion","cumin"], steps:["Mash black beans lightly with cumin and diced onion.","Spread onto a tortilla, top with cheese, fold.","Cook in a dry pan 2-3 min per side until crisp and melty."]},
+  {name:"Miso Soup", time:"15 min", diff:"Easy", tags:["soup","vegetarian","quick"], ingredients:["miso paste","tofu","green onion","seaweed","water"], steps:["Bring water to a gentle simmer (don't boil).","Whisk in miso paste until dissolved.","Add cubed tofu and seaweed, warm through.","Top with sliced green onion."]},
+  {name:"Roast Chicken Thighs with Potatoes", time:"45 min", diff:"Medium", tags:["dinner"], ingredients:["chicken","potato","garlic","olive oil","rosemary","lemon"], steps:["Toss potatoes and garlic with olive oil, spread on a tray.","Nestle chicken thighs among the potatoes, drizzle with oil, add rosemary.","Roast at 425°F for 35-40 min until chicken is golden.","Finish with a squeeze of lemon."]},
+  {name:"Pancakes", time:"20 min", diff:"Easy", tags:["breakfast","vegetarian"], ingredients:["flour","egg","milk","butter","sugar","baking powder"], steps:["Whisk dry ingredients together.","Whisk in egg, milk, and melted butter until just combined.","Cook 1/4 cup portions on a buttered griddle until bubbly, flip.","Serve warm."]},
+  {name:"Greek Salad", time:"12 min", diff:"Easy", tags:["lunch","vegetarian","quick"], ingredients:["cucumber","tomato","feta","olive","onion","olive oil"], steps:["Chop cucumber, tomato, and onion.","Toss with olives and crumbled feta.","Dress with olive oil and a pinch of salt."]},
+  {name:"French Toast", time:"15 min", diff:"Easy", tags:["breakfast","vegetarian"], ingredients:["bread","egg","milk","cinnamon","butter"], steps:["Whisk egg, milk, and cinnamon.","Dip bread slices, coating both sides.","Fry in butter until golden, 2-3 min per side."]},
+  {name:"Vegetable Fried Rice", time:"18 min", diff:"Easy", tags:["dinner","vegetarian","quick"], ingredients:["rice","carrot","peas","egg","soy sauce","garlic"], steps:["Scramble egg, set aside.","Sauté garlic, carrot, and peas until tender.","Add cold rice and soy sauce, stir-fry.","Fold egg back in."]},
+  {name:"Tuna Salad Sandwich", time:"10 min", diff:"Easy", tags:["lunch","quick"], ingredients:["tuna","mayonnaise","bread","celery","lemon"], steps:["Mix tuna with mayonnaise, diced celery, and a squeeze of lemon.","Spread onto bread.","Slice and serve."]},
+  {name:"Butternut Squash Soup", time:"40 min", diff:"Medium", tags:["dinner","vegetarian","soup"], ingredients:["butternut squash","onion","garlic","vegetable broth","cream"], steps:["Sauté onion and garlic.","Add cubed squash and broth, simmer 25 min until soft.","Blend until smooth.","Stir in a splash of cream."]},
+  {name:"BLT Sandwich", time:"12 min", diff:"Easy", tags:["lunch","quick"], ingredients:["bacon","lettuce","tomato","bread","mayonnaise"], steps:["Cook bacon until crisp.","Toast bread, spread with mayonnaise.","Layer bacon, lettuce, and tomato."]},
+  {name:"Vegetable Stir Fry", time:"15 min", diff:"Easy", tags:["dinner","vegetarian","quick"], ingredients:["broccoli","carrot","bell pepper","garlic","soy sauce","ginger"], steps:["Heat oil, add garlic and ginger.","Add hard vegetables first (carrot), then quicker-cooking ones.","Stir-fry until crisp-tender, 5-6 min.","Finish with soy sauce."]},
+  {name:"Cheese Quesadilla", time:"8 min", diff:"Easy", tags:["lunch","quick","vegetarian"], ingredients:["tortilla","cheese"], steps:["Sprinkle cheese over half a tortilla, fold.","Cook in a dry pan 2 min per side until golden and melted."]},
+  {name:"Baked Salmon with Lemon", time:"25 min", diff:"Easy", tags:["dinner"], ingredients:["salmon","lemon","garlic","olive oil","dill"], steps:["Rub salmon with olive oil, garlic, and dill.","Top with lemon slices.","Bake at 400°F for 15-18 min until flaky."]},
+  {name:"Congee (Rice Porridge)", time:"45 min", diff:"Easy", tags:["breakfast","dinner"], ingredients:["rice","water","ginger","green onion","soy sauce"], steps:["Simmer rice in plenty of water with ginger for 35-40 min, stirring occasionally, until creamy.","Season with soy sauce.","Top with sliced green onion."]},
+  {name:"Hummus with Pita", time:"10 min", diff:"Easy", tags:["lunch","vegetarian","quick"], ingredients:["chickpeas","tahini","lemon","garlic","olive oil","pita"], steps:["Blend chickpeas, tahini, lemon juice, and garlic until smooth, adding water as needed.","Drizzle with olive oil.","Serve with warm pita."]},
+  {name:"Pesto Pasta", time:"15 min", diff:"Easy", tags:["dinner","vegetarian","quick"], ingredients:["pasta","basil","pine nuts","parmesan","garlic","olive oil"], steps:["Boil pasta.","Blend basil, pine nuts, parmesan, garlic, and olive oil into a pesto.","Toss pasta with pesto, loosening with pasta water if needed."]},
+  {name:"Chicken Quesadillas", time:"20 min", diff:"Easy", tags:["dinner","quick"], ingredients:["chicken","tortilla","cheese","bell pepper","onion"], steps:["Sauté chicken with onion and bell pepper.","Layer onto a tortilla with cheese, fold.","Cook in a dry pan until golden and melty, 2-3 min per side."]},
+  {name:"Veggie Omelette", time:"12 min", diff:"Easy", tags:["breakfast","vegetarian","quick"], ingredients:["egg","bell pepper","onion","cheese","butter"], steps:["Sauté bell pepper and onion until soft, set aside.","Whisk eggs, pour into a buttered pan.","Add vegetables and cheese to one half, fold when set."]},
+  {name:"Shrimp Stir Fry", time:"15 min", diff:"Easy", tags:["dinner","quick"], ingredients:["shrimp","garlic","broccoli","soy sauce","ginger","rice"], steps:["Sauté garlic and ginger.","Add shrimp, cook until pink, 2-3 min.","Add broccoli and soy sauce, stir-fry until tender.","Serve over rice."]},
+  {name:"Zucchini Noodles with Tomato Sauce", time:"20 min", diff:"Easy", tags:["dinner","vegetarian"], ingredients:["zucchini","tomato","garlic","olive oil","basil"], steps:["Spiralize or julienne zucchini into noodles.","Simmer tomato and garlic into a sauce, 10 min.","Toss zucchini noodles in the warm sauce briefly (don't overcook).","Top with basil."]},
+  {name:"Baked Beans on Toast", time:"10 min", diff:"Easy", tags:["breakfast","quick","vegetarian"], ingredients:["baked beans","bread","butter"], steps:["Warm beans in a small pot.","Toast and butter bread.","Spoon beans over toast."]},
+  {name:"Chicken Caesar Salad", time:"20 min", diff:"Easy", tags:["lunch"], ingredients:["chicken","lettuce","parmesan","croutons","caesar dressing"], steps:["Cook and slice chicken.","Toss lettuce with caesar dressing.","Top with chicken, parmesan, and croutons."]},
+  {name:"Sweet Potato Hash", time:"25 min", diff:"Easy", tags:["breakfast","vegetarian"], ingredients:["sweet potato","onion","bell pepper","egg","olive oil"], steps:["Sauté diced sweet potato until tender, 12-15 min.","Add onion and bell pepper, cook until soft.","Make wells and crack eggs in, cover until set."]},
+  {name:"Pork Fried Noodles", time:"20 min", diff:"Easy", tags:["dinner","quick"], ingredients:["pork","noodles","cabbage","garlic","soy sauce","carrot"], steps:["Stir-fry sliced pork until browned.","Add garlic, cabbage, and carrot, cook until softened.","Add cooked noodles and soy sauce.","Toss everything together over high heat."]},
+  {name:"Minestrone Soup", time:"40 min", diff:"Medium", tags:["dinner","vegetarian","soup"], ingredients:["onion","carrot","celery","tomato","beans","pasta","vegetable broth"], steps:["Sauté onion, carrot, and celery.","Add tomato and broth, simmer 15 min.","Add beans and pasta, cook until pasta is tender, 10 min."]},
+  {name:"Egg Drop Soup", time:"12 min", diff:"Easy", tags:["soup","quick","vegetarian"], ingredients:["egg","chicken broth","cornstarch","green onion","ginger"], steps:["Simmer broth with ginger.","Stir in a cornstarch slurry to thicken slightly.","Drizzle in beaten egg while stirring gently for ribbons.","Top with green onion."]},
+  {name:"Falafel Wrap", time:"20 min", diff:"Medium", tags:["lunch","vegetarian"], ingredients:["chickpeas","garlic","cumin","flour","tortilla","lettuce","tomato"], steps:["Blend chickpeas, garlic, and cumin into a coarse paste, mix in a little flour to bind.","Form patties, pan-fry until golden, 3-4 min per side.","Wrap in tortilla with lettuce and tomato."]},
+  {name:"Beef and Broccoli", time:"20 min", diff:"Easy", tags:["dinner","quick"], ingredients:["beef","broccoli","garlic","soy sauce","ginger","rice"], steps:["Sear sliced beef quickly, set aside.","Stir-fry garlic, ginger, and broccoli.","Return beef, add soy sauce, toss to combine.","Serve over rice."]},
+  {name:"Yogurt Parfait", time:"5 min", diff:"Easy", tags:["breakfast","quick","vegetarian"], ingredients:["yogurt","granola","honey","banana"], steps:["Layer yogurt, granola, and sliced banana in a glass.","Drizzle with honey."]},
+  {name:"Chicken Stir Fry", time:"20 min", diff:"Easy", tags:["dinner","quick"], ingredients:["chicken","bell pepper","onion","soy sauce","garlic","rice"], steps:["Sear diced chicken until cooked through, set aside.","Stir-fry onion, bell pepper, and garlic.","Return chicken, add soy sauce.","Serve over rice."]},
+  {name:"Pasta Primavera", time:"25 min", diff:"Easy", tags:["dinner","vegetarian"], ingredients:["pasta","zucchini","bell pepper","carrot","garlic","parmesan","olive oil"], steps:["Boil pasta.","Sauté garlic and vegetables in olive oil until tender-crisp.","Toss with pasta and parmesan."]},
+  {name:"Onion Soup", time:"50 min", diff:"Medium", tags:["dinner","soup"], ingredients:["onion","butter","beef broth","bread","cheese"], steps:["Slowly caramelize sliced onions in butter, 30-35 min.","Add broth, simmer 10 min.","Ladle into bowls, top with bread and cheese, broil until bubbly."]},
+  {name:"Rice and Beans", time:"25 min", diff:"Easy", tags:["dinner","vegetarian"], ingredients:["rice","black beans","onion","garlic","cumin"], steps:["Sauté onion and garlic with cumin.","Add beans and a splash of water, simmer 10 min.","Serve over cooked rice."]},
+  {name:"Turkey Club Sandwich", time:"12 min", diff:"Easy", tags:["lunch","quick"], ingredients:["turkey","bacon","lettuce","tomato","bread","mayonnaise"], steps:["Toast bread, spread with mayonnaise.","Layer turkey, bacon, lettuce, and tomato.","Stack and slice."]},
+  {name:"Garlic Mushroom Pasta", time:"20 min", diff:"Easy", tags:["dinner","vegetarian"], ingredients:["pasta","mushroom","garlic","butter","parmesan","parsley"], steps:["Boil pasta.","Sauté mushrooms in butter until browned, add garlic.","Toss with pasta, parmesan, and a splash of pasta water.","Finish with parsley."]},
+  {name:"Ratatouille", time:"45 min", diff:"Medium", tags:["dinner","vegetarian"], ingredients:["eggplant","zucchini","tomato","bell pepper","onion","garlic","olive oil"], steps:["Sauté onion and garlic in olive oil.","Add remaining vegetables in batches, cooking until softened.","Combine all, simmer together 20 min until melded."]},
+  {name:"Breakfast Burrito", time:"15 min", diff:"Easy", tags:["breakfast","quick"], ingredients:["egg","tortilla","cheese","black beans","salsa"], steps:["Scramble eggs.","Warm tortilla, layer eggs, cheese, black beans, and salsa.","Roll into a burrito."]},
+  {name:"Cucumber Yogurt Salad", time:"8 min", diff:"Easy", tags:["lunch","vegetarian","quick"], ingredients:["cucumber","yogurt","garlic","dill","lemon"], steps:["Grate or dice cucumber, salt lightly and drain excess water.","Mix with yogurt, minced garlic, dill, and lemon juice."]},
+  {name:"Baked Ziti", time:"45 min", diff:"Medium", tags:["dinner","vegetarian"], ingredients:["pasta","tomato sauce","mozzarella","ricotta","garlic","parmesan"], steps:["Boil pasta until just al dente.","Mix with tomato sauce and ricotta.","Top with mozzarella and parmesan, bake at 375°F for 25 min until bubbly."]},
+  {name:"Corn Chowder", time:"35 min", diff:"Medium", tags:["dinner","vegetarian","soup"], ingredients:["corn","potato","onion","celery","vegetable broth","cream"], steps:["Sauté onion and celery.","Add potato, corn, and broth, simmer 20 min.","Blend a portion for creaminess, stir in cream."]},
+];
+
+/* =========================================================
+   CONFIG — edit these before you deploy
+   ========================================================= */
+// Paste your own Gemini API key here (get one free at aistudio.google.com/apikey).
+// Reminder: anyone who views this page's source can read this key. Restrict it
+// in Google AI Studio (HTTP referrer + daily quota) rather than relying on the
+// login screen below to keep it safe — the login is a light gate, not real security.
+const GEMINI_API_KEY = "AQ.Ab8RN6L5pycfTfD3OHJzA59Y-r-sWLwAWHOoJH8WmkyxZIiqqg";
+const GEMINI_MODEL = "gemini-3.6-flash";
+
+// Login gate credentials
+const SITE_USERNAME = "Starr";
+const SITE_PASSWORD = "Dalphines.starrr.girl";
+
+/* =========================================================
+   LOGIN GATE
+   ========================================================= */
+const loginGate = document.getElementById('loginGate');
+const appRoot = document.getElementById('appRoot');
+const loginUser = document.getElementById('loginUser');
+const loginPass = document.getElementById('loginPass');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+
+function attemptLogin(){
+  const u = loginUser.value.trim();
+  const p = loginPass.value;
+  if(u === SITE_USERNAME && p === SITE_PASSWORD){
+    loginGate.style.display = 'none';
+    appRoot.style.display = 'block';
+  } else {
+    loginError.textContent = "That username or password isn't right — try again.";
+    loginPass.value = '';
+    loginPass.focus();
+  }
+}
+loginBtn.addEventListener('click', attemptLogin);
+[loginUser, loginPass].forEach(el=>{
+  el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') attemptLogin(); });
+});
+loginUser.focus();
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let ingredients = [];
+let mode = "ai"; // AI is the default mode
+
+const chipField = document.getElementById('chipField');
+const ingredientInput = document.getElementById('ingredientInput');
+const quickAdd = document.getElementById('quickAdd');
+const resultsArea = document.getElementById('resultsArea');
+const resultsTitle = document.getElementById('resultsTitle');
+const resultsCount = document.getElementById('resultsCount');
+const findBtn = document.getElementById('findBtn');
+const modeBuiltinBtn = document.getElementById('modeBuiltin');
+const modeAIBtn = document.getElementById('modeAI');
+
+const QUICK_SUGGESTIONS = ["eggs","rice","garlic","onion","chicken","pasta","tomato","cheese","potato","butter","soy sauce","bread"];
+const CHIP_COLORS = ['c0','c1','c2','c3'];
+
+function renderQuickAdd(){
+  quickAdd.innerHTML = "";
+  QUICK_SUGGESTIONS.forEach(item=>{
+    if(ingredients.includes(normalize(item))) return;
+    const btn = document.createElement('button');
+    btn.textContent = "+ " + item;
+    btn.onclick = ()=>{ addIngredient(item); };
+    quickAdd.appendChild(btn);
+  });
+}
+
+function normalize(s){ return s.trim().toLowerCase(); }
+
+function addIngredient(raw){
+  const val = normalize(raw);
+  if(!val) return;
+  if(ingredients.includes(val)) return;
+  ingredients.push(val);
+  renderChips();
+  renderQuickAdd();
+}
+
+function removeIngredient(val){
+  ingredients = ingredients.filter(i=>i!==val);
+  renderChips();
+  renderQuickAdd();
+}
+
+function renderChips(){
+  document.querySelectorAll('.chip').forEach(c=>c.remove());
+  ingredients.forEach((ing, i)=>{
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + CHIP_COLORS[i % CHIP_COLORS.length];
+    chip.innerHTML = `<span>${escapeHtml(ing)}</span>`;
+    const btn = document.createElement('button');
+    btn.innerHTML = '&times;';
+    btn.onclick = ()=>removeIngredient(ing);
+    chip.appendChild(btn);
+    chipField.insertBefore(chip, ingredientInput);
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+ingredientInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' || e.key === ','){
+    e.preventDefault();
+    addIngredient(ingredientInput.value);
+    ingredientInput.value = '';
+  } else if(e.key === 'Backspace' && ingredientInput.value === '' && ingredients.length){
+    removeIngredient(ingredients[ingredients.length-1]);
+  }
+});
+
+modeBuiltinBtn.onclick = ()=>{
+  mode = 'builtin';
+  modeBuiltinBtn.classList.add('active');
+  modeAIBtn.classList.remove('active');
+};
+modeAIBtn.onclick = ()=>{
+  mode = 'ai';
+  modeAIBtn.classList.add('active');
+  modeBuiltinBtn.classList.remove('active');
+};
+
+findBtn.onclick = ()=>{
+  if(ingredients.length === 0){
+    ingredientInput.focus();
+    ingredientInput.placeholder = "add at least one ingredient first…";
+    return;
+  }
+  if(mode === 'ai'){
+    runAISearch();
+  } else {
+    runBuiltinSearch();
+  }
+};
+
+/* =========================================================
+   BUILT-IN MATCHING (fallback, no API key needed)
+   ========================================================= */
+function tokenMatch(userIng, recipeIng){
+  return recipeIng.includes(userIng) || userIng.includes(recipeIng);
+}
+
+function scoreRecipe(recipe){
+  let matched = [];
+  let missing = [];
+  recipe.ingredients.forEach(ri=>{
+    const hit = ingredients.some(ui=>tokenMatch(ui, ri));
+    if(hit) matched.push(ri); else missing.push(ri);
+  });
+  return {
+    recipe, matched, missing,
+    pct: Math.round((matched.length / recipe.ingredients.length) * 100)
+  };
+}
+
+function runBuiltinSearch(){
+  resultsTitle.textContent = "Matching against your pantry…";
+  resultsCount.textContent = "";
+  resultsArea.innerHTML = `<div class="loading-state"><span class="pulse"><span class="spinner"></span>sorting the recipe box…</span></div>`;
+
+  setTimeout(()=>{
+    const scored = RECIPES.map(scoreRecipe)
+      .filter(s=>s.matched.length > 0)
+      .sort((a,b)=> b.pct - a.pct || a.missing.length - b.missing.length);
+
+    renderBuiltinResults(scored);
+  }, 260);
+}
+
+function renderBuiltinResults(scored){
+  if(scored.length === 0){
+    resultsTitle.textContent = "No matches yet";
+    resultsCount.textContent = "";
+    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">🤔</span><span class="big">Nothing matched those ingredients</span>Try adding a staple like rice, egg, garlic, or pasta — most recipes lean on at least one of those.</div>`;
+    return;
+  }
+  resultsTitle.textContent = "What you can make";
+  resultsCount.textContent = scored.length + " matches found";
+
+  const grid = document.createElement('div');
+  grid.className = 'card-grid';
+
+  scored.slice(0, 24).forEach((s, i)=>{
+    const card = document.createElement('div');
+    card.className = 'rcard';
+    card.style.animationDelay = (i * 0.03) + 's';
+
+    const stampClass = s.pct === 100 ? 'stamp full' : 'stamp';
+
+    const ingList = s.recipe.ingredients.map(ri=>{
+      const have = s.matched.includes(ri);
+      return `<li class="${have ? 'have':'missing'}">${escapeHtml(ri)}</li>`;
+    }).join('');
+
+    const stepsList = s.recipe.steps.map(st=>`<li>${escapeHtml(st)}</li>`).join('');
+
+    card.innerHTML = `
+      <div class="${stampClass}"><b>${s.pct}%</b><small>match</small></div>
+      <h3>${escapeHtml(s.recipe.name)}</h3>
+      <div class="meta"><span>${s.recipe.time}</span><span>${s.recipe.diff}</span>${s.recipe.tags.map(t=>`<span>${t}</span>`).join('')}</div>
+      <ul class="ing-list">${ingList}</ul>
+      <hr class="divider">
+      <details>
+        <summary>Steps</summary>
+        <ol class="steps">${stepsList}</ol>
+      </details>
+    `;
+    grid.appendChild(card);
+  });
+
+  resultsArea.innerHTML = '';
+  resultsArea.appendChild(grid);
+}
+
+/* =========================================================
+   AI MODE (default — calls the Gemini API with the shared key above)
+   ========================================================= */
+async function runAISearch(){
+  if(!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_GEMINI_API_KEY_HERE"){
+    resultsTitle.textContent = "No Gemini key set yet";
+    resultsCount.textContent = "";
+    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">🔑</span><span class="big">Add your Gemini API key</span>Open the file and paste your key into GEMINI_API_KEY near the top of the script — get a free one at aistudio.google.com/apikey. Or switch to Built-in mode above, no key needed.</div>`;
+    return;
+  }
+
+  resultsTitle.textContent = "Asking Gemini what to cook…";
+  resultsCount.textContent = "";
+  resultsArea.innerHTML = `<div class="loading-state"><span class="pulse"><span class="spinner"></span>thinking up recipes for: ${escapeHtml(ingredients.join(', '))}</span></div>`;
+
+  const prompt = `I have these ingredients available: ${ingredients.join(', ')}.
+Suggest up to 6 recipes I could realistically make, prioritizing ones that use mostly what I already have.
+Respond ONLY with valid JSON (no markdown fences, no preamble, no surrounding text), as an array of objects with this exact shape:
+[{"name": "...", "time": "20 min", "diff": "Easy", "tags": ["dinner"], "ingredients": ["...", "..."], "missing": ["..."], "steps": ["...", "..."]}]
+"ingredients" is the full ingredient list for the recipe. "missing" is the subset of those I likely don't have on hand, based on my list above. Keep steps concise, 3-5 steps.`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+  try{
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    if(!response.ok){
+      const errText = await response.text();
+      throw new Error("API error " + response.status + ": " + errText);
+    }
+
+    const data = await response.json();
+    const textBlock = (data.candidates && data.candidates[0] && data.candidates[0].content
+      ? data.candidates[0].content.parts.map(p=>p.text || "").join("\n")
+      : "");
+    const cleaned = textBlock.replace(/```json|```/g, "").trim();
+    const recipes = JSON.parse(cleaned);
+    renderAIResults(recipes);
+
+  }catch(err){
+    resultsTitle.textContent = "Couldn't reach the AI";
+    resultsCount.textContent = "";
+    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">😕</span><span class="big">Something went wrong</span>${escapeHtml(err.message)}<br><br>Double check the Gemini key in the code, or switch to Built-in mode above.</div>`;
+  }
+}
+
+function renderAIResults(recipes){
+  if(!recipes || recipes.length === 0){
+    resultsTitle.textContent = "No suggestions came back";
+    resultsCount.textContent = "";
+    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">🍽️</span><span class="big">Empty-handed</span>Try adding a couple more ingredients and asking again.</div>`;
+    return;
+  }
+  resultsTitle.textContent = "AI suggestions";
+  resultsCount.textContent = recipes.length + " ideas from Claude";
+
+  const grid = document.createElement('div');
+  grid.className = 'card-grid';
+
+  recipes.forEach((r, i)=>{
+    const card = document.createElement('div');
+    card.className = 'rcard';
+    card.style.animationDelay = (i * 0.03) + 's';
+
+    const missingSet = new Set((r.missing || []).map(m=>m.toLowerCase()));
+    const ingList = (r.ingredients || []).map(ri=>{
+      const missing = missingSet.has(ri.toLowerCase());
+      return `<li class="${missing ? 'missing':'have'}">${escapeHtml(ri)}</li>`;
+    }).join('');
+
+    const pct = r.ingredients && r.ingredients.length
+      ? Math.round(((r.ingredients.length - (r.missing||[]).length) / r.ingredients.length) * 100)
+      : 100;
+    const stampClass = pct === 100 ? 'stamp full' : 'stamp';
+
+    const stepsList = (r.steps || []).map(st=>`<li>${escapeHtml(st)}</li>`).join('');
+    const tags = (r.tags || []).map(t=>`<span>${escapeHtml(t)}</span>`).join('');
+
+    card.innerHTML = `
+      <div class="${stampClass}"><b>${pct}%</b><small>match</small></div>
+      <h3>${escapeHtml(r.name || 'Untitled recipe')}</h3>
+      <div class="meta"><span>${escapeHtml(r.time || '')}</span><span>${escapeHtml(r.diff || '')}</span>${tags}</div>
+      <ul class="ing-list">${ingList}</ul>
+      <hr class="divider">
+      <details>
+        <summary>Steps</summary>
+        <ol class="steps">${stepsList}</ol>
+      </details>
+      <div class="ai-note">✨ generated live by gemini</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  resultsArea.innerHTML = '';
+  resultsArea.appendChild(grid);
+}
+
+/* init */
+renderQuickAdd();
+</script>
+</body>
+</html>
