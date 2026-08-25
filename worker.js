@@ -2,7 +2,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Gemini API endpoint
+    // Gemini API
     if (url.pathname === "/api/gemini") {
       if (request.method !== "POST") {
         return new Response("Method not allowed", {
@@ -49,7 +49,7 @@ export default {
       }
     }
 
-    // Everything else → website
+    // Serve the website
     return env.ASSETS.fetch(request);
   }
 };
