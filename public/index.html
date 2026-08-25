@@ -663,12 +663,6 @@ function renderBuiltinResults(scored){
    AI MODE (default — calls the Gemini API with the shared key above)
    ========================================================= */
 async function runAISearch(){
-  if(!GEMINI_API_KEY || GEMINI_API_KEY === "PASTE_YOUR_GEMINI_API_KEY_HERE"){
-    resultsTitle.textContent = "No Gemini key set yet";
-    resultsCount.textContent = "";
-    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">🔑</span><span class="big">Add your Gemini API key</span>Open the file and paste your key into GEMINI_API_KEY near the top of the script — get a free one at aistudio.google.com/apikey. Or switch to Built-in mode above, no key needed.</div>`;
-    return;
-  }
 
   resultsTitle.textContent = "Asking Gemini what to cook…";
   resultsCount.textContent = "";
