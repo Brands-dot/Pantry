@@ -583,137 +583,82 @@ findBtn.onclick = ()=>{
 /* =========================================================
    BUILT-IN MATCHING (fallback, no API key needed)
    ========================================================= */
-async function runAISearch() {
 
-  resultsTitle.textContent = "Asking Gemini what to cook…";
+function runBuiltinSearch() {
+
+  resultsTitle.textContent = "Finding recipes you can make…";
   resultsCount.textContent = "";
 
   resultsArea.innerHTML = `
     <div class="loading-state">
       <span class="pulse">
         <span class="spinner"></span>
-        thinking up recipes for: ${escapeHtml(ingredients.join(", "))}
+        checking your ingredients…
       </span>
     </div>
   `;
 
-  const prompt = `I have these ingredients available: ${ingredients.join(", ")}.
-Suggest up to 6 recipes I could realistically make, prioritizing ones that use mostly what I already have.
-
-Respond ONLY with valid JSON, with this exact shape:
-
-[
-  {
-    "name": "...",
-    "time": "20 min",
-    "diff": "Easy",
-    "tags": ["dinner"],
-    "ingredients": ["...", "..."],
-    "missing": ["..."],
-    "steps": ["...", "..."]
-  }
-]
-
-"ingredients" is the full ingredient list.
-"missing" contains ingredients I likely don't have.
-Keep steps concise, 3-5 steps.`;
-
   try {
 
-    const response = await fetch(
-      "https://pantry.brandonnjenga294.workers.dev/api/gemini",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            responseMimeType: "application/json"
-          }
-        })
+    /*
+     * Match the user's ingredients against the built-in recipe list.
+     *
+     * This expects your existing recipe database to be called:
+     * RECIPES
+     *
+     * If your existing database has a different name, we will change
+     * only that name after checking the rest of your code.
+     */
+
+    const scored = RECIPES.map(recipe => {
+
+      const recipeIngredients = recipe.ingredients.map(
+        normalizeIngredient
+      );
+
+      const userIngredients = ingredients.map(
+        normalizeIngredient
+      );
+
+      const matched = recipeIngredients.filter(ri =>
+        userIngredients.some(ui =>
+          ui === ri ||
+          ui.includes(ri) ||
+          ri.includes(ui)
+        )
+      );
+
+      const uniqueMatched = [...new Set(matched)];
+
+      const pct = Math.round(
+        (uniqueMatched.length / recipeIngredients.length) * 100
+      );
+
+      return {
+        recipe,
+        matched: uniqueMatched,
+        pct
+      };
+
+    })
+    .filter(s => s.pct > 0)
+    .sort((a, b) => {
+
+      if (b.pct !== a.pct) {
+        return b.pct - a.pct;
       }
-    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
+      return b.matched.length - a.matched.length;
 
-      throw new Error(
-        "API error " + response.status + ": " + errorText
-      );
-    }
+    });
 
-    const data = await response.json();
-
-    const textBlock =
-      data.candidates &&
-      data.candidates[0] &&
-      data.candidates[0].content &&
-      data.candidates[0].content.parts
-        ? data.candidates[0].content.parts
-            .map(part => part.text || "")
-            .join("")
-        : "";
-
-    if (!textBlock) {
-      throw new Error("Gemini returned an empty response.");
-    }
-
-    console.log("Gemini raw response:", textBlock);
-
-    const cleaned = textBlock
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
-
-    let recipes;
-
-    try {
-
-      recipes = JSON.parse(cleaned);
-
-    } catch (jsonError) {
-
-      console.error(
-        "Gemini returned invalid JSON:",
-        cleaned
-      );
-
-      console.error(
-        "JSON parse error:",
-        jsonError
-      );
-
-      throw new Error(
-        "Gemini returned invalid recipe data."
-      );
-    }
-
-    if (!Array.isArray(recipes)) {
-      throw new Error(
-        "Gemini did not return a recipe list."
-      );
-    }
-
-    renderAIResults(recipes);
+    renderBuiltinResults(scored);
 
   } catch (err) {
 
-    console.error(
-      "AI request failed:",
-      err
-    );
+    console.error("Built-in search failed:", err);
 
-    resultsTitle.textContent = "Couldn't reach the AI";
+    resultsTitle.textContent = "Couldn't search recipes";
     resultsCount.textContent = "";
 
     resultsArea.innerHTML = `
@@ -721,57 +666,115 @@ Keep steps concise, 3-5 steps.`;
         <span class="emoji-big">😕</span>
         <span class="big">Something went wrong</span>
         ${escapeHtml(err.message)}
-        <br><br>
-        Try again or switch to Built-in mode.
       </div>
     `;
   }
 }
-function renderBuiltinResults(scored){
-  if(scored.length === 0){
+
+
+/* =========================================================
+   BUILT-IN RESULTS
+   ========================================================= */
+
+function renderBuiltinResults(scored) {
+
+  if (scored.length === 0) {
+
     resultsTitle.textContent = "No matches yet";
     resultsCount.textContent = "";
-    resultsArea.innerHTML = `<div class="empty-state"><span class="emoji-big">🤔</span><span class="big">Nothing matched those ingredients</span>Try adding a staple like rice, egg, garlic, or pasta — most recipes lean on at least one of those.</div>`;
+
+    resultsArea.innerHTML = `
+      <div class="empty-state">
+        <span class="emoji-big">🤔</span>
+        <span class="big">Nothing matched those ingredients</span>
+        Try adding a staple like rice, egg, garlic, or pasta —
+        most recipes lean on at least one of those.
+      </div>
+    `;
+
     return;
   }
+
   resultsTitle.textContent = "What you can make";
-  resultsCount.textContent = scored.length + " matches found";
+  resultsCount.textContent =
+    scored.length + " matches found";
 
-  const grid = document.createElement('div');
-  grid.className = 'card-grid';
+  const grid = document.createElement("div");
+  grid.className = "card-grid";
 
-  scored.slice(0, 24).forEach((s, i)=>{
-    const card = document.createElement('div');
-    card.className = 'rcard';
-    card.style.animationDelay = (i * 0.03) + 's';
+  scored.slice(0, 24).forEach((s, i) => {
 
-    const stampClass = s.pct === 100 ? 'stamp full' : 'stamp';
+    const card = document.createElement("div");
 
-    const ingList = s.recipe.ingredients.map(ri=>{
-      const have = s.matched.includes(ri);
-      return `<li class="${have ? 'have':'missing'}">${escapeHtml(ri)}</li>`;
-    }).join('');
+    card.className = "rcard";
+    card.style.animationDelay =
+      (i * 0.03) + "s";
 
-    const stepsList = s.recipe.steps.map(st=>`<li>${escapeHtml(st)}</li>`).join('');
+    const stampClass =
+      s.pct === 100
+        ? "stamp full"
+        : "stamp";
+
+    const ingList =
+      s.recipe.ingredients.map(ri => {
+
+        const normalized =
+          normalizeIngredient(ri);
+
+        const have =
+          s.matched.includes(normalized);
+
+        return `
+          <li class="${have ? "have" : "missing"}">
+            ${escapeHtml(ri)}
+          </li>
+        `;
+
+      }).join("");
+
+    const stepsList =
+      s.recipe.steps.map(st => `
+        <li>${escapeHtml(st)}</li>
+      `).join("");
 
     card.innerHTML = `
-      <div class="${stampClass}"><b>${s.pct}%</b><small>match</small></div>
+      <div class="${stampClass}">
+        <b>${s.pct}%</b>
+        <small>match</small>
+      </div>
+
       <h3>${escapeHtml(s.recipe.name)}</h3>
-      <div class="meta"><span>${s.recipe.time}</span><span>${s.recipe.diff}</span>${s.recipe.tags.map(t=>`<span>${t}</span>`).join('')}</div>
-      <ul class="ing-list">${ingList}</ul>
+
+      <div class="meta">
+        <span>${escapeHtml(s.recipe.time)}</span>
+        <span>${escapeHtml(s.recipe.diff)}</span>
+
+        ${s.recipe.tags.map(t => `
+          <span>${escapeHtml(t)}</span>
+        `).join("")}
+      </div>
+
+      <ul class="ing-list">
+        ${ingList}
+      </ul>
+
       <hr class="divider">
+
       <details>
         <summary>Steps</summary>
-        <ol class="steps">${stepsList}</ol>
+
+        <ol class="steps">
+          ${stepsList}
+        </ol>
       </details>
     `;
+
     grid.appendChild(card);
   });
 
-  resultsArea.innerHTML = '';
+  resultsArea.innerHTML = "";
   resultsArea.appendChild(grid);
 }
-
 /* =========================================================
    AI MODE
    ========================================================= */
