@@ -583,7 +583,13 @@ findBtn.onclick = ()=>{
 /* =========================================================
    BUILT-IN MATCHING (fallback, no API key needed)
    ========================================================= */
-
+function normalizeIngredient(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+  
 function runBuiltinSearch() {
 
   resultsTitle.textContent = "Finding recipes you can make…";
