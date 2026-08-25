@@ -445,7 +445,6 @@ const RECIPES = [
 // Reminder: anyone who views this page's source can read this key. Restrict it
 // in Google AI Studio (HTTP referrer + daily quota) rather than relying on the
 // login screen below to keep it safe — the login is a light gate, not real security.
-const GEMINI_API_KEY = "AQ.Ab8RN6L5pycfTfD3OHJzA59Y-r-sWLwAWHOoJH8WmkyxZIiqqg";
 const GEMINI_MODEL = "gemini-3.6-flash";
 
 // Login gate credentials
@@ -681,15 +680,33 @@ Respond ONLY with valid JSON (no markdown fences, no preamble, no surrounding te
 [{"name": "...", "time": "20 min", "diff": "Easy", "tags": ["dinner"], "ingredients": ["...", "..."], "missing": ["..."], "steps": ["...", "..."]}]
 "ingredients" is the full ingredient list for the recipe. "missing" is the subset of those I likely don't have on hand, based on my list above. Keep steps concise, 3-5 steps.`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const response = await fetch("/api/gemini", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    contents: [
+      {
+        parts: [
+          {
+            text: prompt
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      responseMimeType: "application/json"
+    }
+  })
+});
 
   try{
     const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY
-      },
+     headers: {
+  "Content-Type": "application/json"
+}
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: "application/json" }
