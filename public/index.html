@@ -712,12 +712,40 @@ try{
     }
 
     const data = await response.json();
-    const textBlock = (data.candidates && data.candidates[0] && data.candidates[0].content
-      ? data.candidates[0].content.parts.map(p=>p.text || "").join("\n")
-      : "");
-    const cleaned = textBlock.replace(/```json|```/g, "").trim();
-    const recipes = JSON.parse(cleaned);
-    renderAIResults(recipes);
+   const textBlock =
+  data.candidates &&
+  data.candidates[0] &&
+  data.candidates[0].content
+    ? data.candidates[0].content.parts
+        .map(p => p.text || "")
+        .join("\n")
+    : "";
+
+if (!textBlock) {
+  throw new Error("Gemini returned an empty response.");
+}
+
+const cleaned = textBlock
+  .replace(/```json/gi, "")
+  .replace(/```/g, "")
+  .trim();
+
+let recipes;
+
+try {
+  recipes = JSON.parse(cleaned);
+} catch (jsonError) {
+  console.error("Gemini returned invalid JSON:", cleaned);
+  throw new Error(
+    "Gemini returned invalid recipe data. Please try again."
+  );
+}
+
+if (!Array.isArray(recipes)) {
+  throw new Error("Gemini did not return a recipe list.");
+}
+
+renderAIResults(recipes);
 
   }catch(err){
     resultsTitle.textContent = "Couldn't reach the AI";
