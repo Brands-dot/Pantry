@@ -736,25 +736,27 @@ Keep steps concise, 3-5 steps.`;
     }
 
     const cleaned = textBlock
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
+  .replace(/```json/gi, "")
+  .replace(/```/g, "")
+  .trim();
 
-    let recipes;
+let recipes;
 
-    try {
-      recipes = JSON.parse(cleaned);
-    } catch (jsonError) {
-      console.error("Gemini returned invalid JSON:", cleaned);
-      throw new Error(
-        "Gemini returned invalid recipe data. Please try again."
-      );
-    }
+try {
+  recipes = JSON.parse(cleaned);
+} catch (jsonError) {
 
-    if (!Array.isArray(recipes)) {
-      throw new Error("Gemini did not return a recipe list.");
-    }
+  console.error("Gemini returned invalid JSON:", textBlock);
+  console.error("JSON parse error:", jsonError);
 
+  throw new Error(
+    "Gemini returned invalid recipe data. Please try again."
+  );
+}
+
+if (!Array.isArray(recipes)) {
+  throw new Error("Gemini did not return a recipe list.");
+}
     renderAIResults(recipes);
 
   } catch (err) {
